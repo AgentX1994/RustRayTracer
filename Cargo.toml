@@ -1,0 +1,11 @@
+[package]
+name = "ray_tracer"
+version = "0.1.0"
+authors = ["John Asper <agentx1994@gmail.com>"]
+
+[dependencies]
+
+[dependencies.sdl2]
+version = "0.31"
+default-features = false
+features = ["ttf","image","gfx","mixer"]
