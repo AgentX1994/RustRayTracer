@@ -75,20 +75,28 @@ pub fn run(width: u32, height: u32) {
         canvas.with_texture_canvas(&mut texture, |texture_canvas| {
             for dx in 0..width {
                 for dy in 0..height {
-                    let x = (dx as f64) - ((width/2) as f64);
-                    let y = (dy as f64) - ((height/2) as f64);
-                    let pos = Vector3::new(x as f64, y as f64, 0.0);
-                    let dir = Vector3::new(0.0, 0.0, -1.0);
+                    let x = ((dx as f64) - (width as f64)/2.0)/(width as f64);
+                    let y = ((dy as f64) - (height as f64)/2 as f64)/(height as f64);
+                    let view_plane_pos = Vector3::new(x, y, 0.0).add(&camera_dir);
+                    let pos = camera_pos.clone();
+                    let dir = view_plane_pos.sub(&pos).into_unit();
 
                     let r = Ray::new(pos, dir);
 
                     if let Some((t0, t1)) = sphere.ray_intersection(&r) {
-                        let p = r.pos.add(&(r.dir.mul(t1)));
+                        let t = if t1 < 0.0 {
+                            t0
+                        } else {
+                            t1
+                        };
+                        let p = r.pos.add(&(r.dir.mul(t)));
                         let normal = sphere.pos.sub(&p).into_unit();
                         let view = p.sub(&camera_pos).into_unit();
-                        let proportion = normal.dot(&view);
+                        let mut proportion = normal.dot(&view);
                         let (mut red, mut green, mut blue) = sphere_color.rgb();
-                        println!("Proportion = {}", proportion);
+                        if proportion < 0.0 {
+                            proportion = 0.0;
+                        }
                         red = ((red as f64) * proportion) as u8;
                         blue = ((blue as f64) * proportion) as u8;
                         green = ((green as f64)* proportion) as u8;
