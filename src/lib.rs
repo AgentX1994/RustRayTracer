@@ -6,6 +6,8 @@ use sdl2::keyboard::Keycode;
 
 use sdl2::gfx::primitives::DrawRenderer;
 
+use std::f64::consts::PI;
+
 pub mod ray;
 pub mod sphere;
 pub mod vector3d;
@@ -13,6 +15,12 @@ pub mod vector3d;
 use sphere::Sphere;
 use ray::Ray;
 use vector3d::Vector3;
+
+#[derive(PartialEq)]
+enum ProjectionMode {
+    Ortho,
+    Perspective
+}
 
 fn create_window(context: &sdl2::Sdl, title: &str, width: u32, height: u32) -> Result<sdl2::video::Window, sdl2::video::WindowBuildError>{
     let video_subsystem = context.video().unwrap();
@@ -43,12 +51,12 @@ pub fn run(width: u32, height: u32) {
 
     // Set up sphere model
     let sphere = Sphere::new(
-        Vector3::new(0.0, 0.0, -1055.0),
-        100.0,
+        Vector3::new(0.0, 0.0, -3.0),
+        1.0,
     );
 
-    let fovy = 90.0;
-    let fovx = 16.0*fovy/10.0;
+    let mut fovy = 90.0; // Degrees
+    let mut fovx = 90.0; // Degrees
 
     let camera_pos = Vector3::new(0.0, 0.0, 0.0);
     let camera_dir = Vector3::new(0.0, 0.0, -1.0);
@@ -57,16 +65,35 @@ pub fn run(width: u32, height: u32) {
     let blank_color = pixels::Color::RGBA(0, 0, 0, 255);
 
     let mut event_pump = sdl_context.event_pump().unwrap();
+    let mut mode = ProjectionMode::Perspective;
     'main: loop {
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit {..} => break 'main,
 
                 Event::KeyDown { keycode: Some(keycode), .. } => {
-                    if keycode == Keycode::Escape {
-                        break 'main
+                    match keycode {
+                        Keycode::Escape => break 'main,
+                        Keycode::P => if mode == ProjectionMode::Ortho { mode = ProjectionMode::Perspective } else { mode = ProjectionMode::Ortho },
+                        Keycode::Up => {
+                            fovy += 1.0;
+                            println!("fovy = {}", fovy);
+                        },
+                        Keycode::Down => {
+                            fovy -= 1.0;
+                            println!("fovy = {}", fovy);
+                        },
+                        Keycode::Right => {
+                            fovx += 1.0;
+                            println!("fovx = {}", fovx);
+                        },
+                        Keycode::Left => {
+                            fovx -= 1.0;
+                            println!("fovx = {}", fovx);
+                        },
+                        _ => {}
                     }
-                }
+                },
                 _ => {}
             }
         }
@@ -75,11 +102,38 @@ pub fn run(width: u32, height: u32) {
         canvas.with_texture_canvas(&mut texture, |texture_canvas| {
             for dx in 0..width {
                 for dy in 0..height {
-                    let x = ((dx as f64) - (width as f64)/2.0)/(width as f64);
-                    let y = ((dy as f64) - (height as f64)/2 as f64)/(height as f64);
-                    let view_plane_pos = Vector3::new(x, y, 0.0).add(&camera_dir);
+
                     let pos = camera_pos.clone();
-                    let dir = view_plane_pos.sub(&pos).into_unit();
+                    let dir = match mode {
+                        ProjectionMode::Ortho => {
+                            let x = ((dx as f64) - (width as f64)/2.0)/(width as f64);
+                            let y = ((dy as f64) - (height as f64)/2.0)/(height as f64);
+                            let view_plane_pos = Vector3::new(x, y, 0.0).add(&camera_dir);
+                            view_plane_pos.into_unit()
+                        },
+                        ProjectionMode::Perspective => {
+                            // from https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-generating-camera-rays/generating-camera-rays
+                            let pixel_x_ndc = (dx as f64 + 0.5f64)/width as f64;
+                            let pixel_y_ndc = (dy as f64 + 0.5f64)/height as f64;
+
+                            let pixel_screen_x = 2.0*pixel_x_ndc - 1.0;
+                            let pixel_screen_y = 2.0*pixel_y_ndc - 1.0;
+
+                            //println!("Now rendering screen coords ({}, {})", pixel_screen_x, pixel_screen_y);
+
+                            const DEGREES_TO_RADIANS : f64 = PI/180.0;
+                            let aspect_ratio = width as f64 / height as f64;
+                            let pixel_camera_x = pixel_screen_x * aspect_ratio * (fovx/2.0 as f64 * DEGREES_TO_RADIANS).tan();
+                            let pixel_camera_y = pixel_screen_y * (fovy/2.0 as f64 * DEGREES_TO_RADIANS).tan();
+                            let pixel_camera_space = Vector3::new(pixel_camera_x, pixel_camera_y, -1.0);
+                            //println!("\tfinal direction vec (before normalization): {:?}", pixel_camera_space);
+                            pixel_camera_space.into_unit()
+
+                            // TODO in case of moving camera, make sure to transform this point
+                            // into world space before normalizing it!
+                        }
+                    };
+
 
                     let r = Ray::new(pos, dir);
 
