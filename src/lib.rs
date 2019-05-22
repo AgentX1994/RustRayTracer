@@ -16,12 +16,14 @@ use sphere::Sphere;
 use ray::Ray;
 use vector3d::Vector3;
 
+/// Represents the current projection mode, either Ortho or Perspective.
 #[derive(PartialEq)]
 enum ProjectionMode {
     Ortho,
     Perspective
 }
 
+/// Creates the window for the ray tracer.
 fn create_window(context: &sdl2::Sdl, title: &str, width: u32, height: u32) -> Result<sdl2::video::Window, sdl2::video::WindowBuildError>{
     let video_subsystem = context.video().unwrap();
 
@@ -31,6 +33,7 @@ fn create_window(context: &sdl2::Sdl, title: &str, width: u32, height: u32) -> R
         .build()
 }
 
+/// Runs the raytracer with the given width and height.
 pub fn run(width: u32, height: u32) {
     let sdl_context = sdl2::init().unwrap();
     let window = create_window(&sdl_context, "Ray Tracer", width, height).unwrap();
