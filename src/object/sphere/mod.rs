@@ -1,7 +1,9 @@
 //! This module defines a struct representing a mathematical Sphere
 
-use ray::Ray;
-use vector3d::Vector3;
+use super::Object;
+use crate::material::Material;
+use crate::ray::Ray;
+use crate::vector3d::Vector3;
 
 /// The struct representing a sphere
 ///
@@ -11,6 +13,7 @@ use vector3d::Vector3;
 pub struct Sphere {
     pub pos: Vector3,
     pub radius: f64,
+    pub material: Material,
 }
 
 impl Sphere {
@@ -27,10 +30,16 @@ impl Sphere {
     /// assert_eq!(sphere.pos.z, 1.0);
     /// assert_eq!(sphere.radius, 3.0);
     /// ```
-    pub fn new(pos: Vector3, radius: f64) -> Sphere {
-        Sphere { pos, radius }
+    pub fn new(pos: Vector3, radius: f64, material: Material) -> Sphere {
+        Sphere {
+            pos,
+            radius,
+            material,
+        }
     }
+}
 
+impl Object for Sphere {
     /// Calculates if and where the given ray intersects with this sphere.
     ///
     /// This function calculates the intersection points, if any, of this sphere with the given ray.
@@ -75,7 +84,7 @@ impl Sphere {
     ///
     /// assert!(ray3_intersection.is_none());
     /// ```
-    pub fn ray_intersection(&self, r: &Ray) -> Option<(f64, f64)> {
+    fn ray_intersection(&self, r: &Ray) -> Option<f64> {
         let o_sub_c = r.pos.sub(&self.pos);
         let len_sq_o_sub_c = o_sub_c.dot(&o_sub_c);
         let dir_dot_o_sub_c = r.dir.dot(&o_sub_c);
@@ -85,8 +94,33 @@ impl Sphere {
 
         match discrimant {
             x if x < 0.0 => None,
-            x if x == 0.0 => Some((-dir_dot_o_sub_c, -dir_dot_o_sub_c)),
-            x => Some((-dir_dot_o_sub_c + x.sqrt(), -dir_dot_o_sub_c - x.sqrt())),
+            x if x == 0.0 => {
+                if -dir_dot_o_sub_c > 0.0 {
+                    Some(-dir_dot_o_sub_c)
+                } else {
+                    None
+                }
+            }
+            x => {
+                let (t0, t1) = (-dir_dot_o_sub_c + x.sqrt(), -dir_dot_o_sub_c - x.sqrt());
+                if t1 > 0.0 {
+                    Some(t1)
+                } else if t0 > 0.0 {
+                    Some(t0)
+                } else {
+                    None
+                }
+            }
         }
+    }
+
+    /// Returns this sphere's material
+    fn material(&self) -> &Material {
+        &self.material
+    }
+
+    /// Returns this sphere's position
+    fn position(&self) -> &Vector3 {
+        &self.pos
     }
 }

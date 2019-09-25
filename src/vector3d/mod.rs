@@ -113,7 +113,7 @@ impl Vector3 {
         Vector3 {
             x: self.x - other.x,
             y: self.y - other.y,
-            z: self.z - other.z
+            z: self.z - other.z,
         }
     }
 
@@ -134,7 +134,7 @@ impl Vector3 {
         Vector3 {
             x: self.x * other,
             y: self.y * other,
-            z: self.z * other
+            z: self.z * other,
         }
     }
 
@@ -152,6 +152,25 @@ impl Vector3 {
     /// assert_eq!(my_vec1.dot(&my_vec2), 2.0 + 8.0 + 18.0);
     /// ```
     pub fn dot(&self, other: &Vector3) -> f64 {
-        self.x*other.x + self.y*other.y + self.z*other.z
+        self.x * other.x + self.y * other.y + self.z * other.z
+    }
+
+    /// Reverses the direction of this vector
+    ///
+    /// # Example
+    /// ```
+    /// let my_vec = ray_tracer::vector3d::Vector3::new(1.0, 2.0, 3.0);
+    ///
+    /// let negated = my_vec.negate();
+    /// assert_eq!(negated.x, -my_vec.x);
+    /// assert_eq!(negated.y, -my_vec.y);
+    /// assert_eq!(negated.z, -my_vec.z);
+    /// ```
+    pub fn negate(&self) -> Vector3 {
+        Vector3 {
+            x: -self.x,
+            y: -self.y,
+            z: -self.z,
+        }
     }
 }

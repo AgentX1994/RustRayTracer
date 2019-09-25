@@ -1,5 +1,3 @@
-extern crate ray_tracer;
-
 const SCREEN_WIDTH: u32 = 800;
 const SCREEN_HEIGHT: u32 = 600;
 

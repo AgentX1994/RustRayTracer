@@ -1,7 +1,6 @@
 //! This module defines a struct representing a mathematical Ray
 
-
-use vector3d::Vector3;
+use super::vector3d::Vector3;
 
 /// The struct representing a Ray
 ///
